@@ -20,64 +20,61 @@ FIELDS_TO_COPY = [
     "categories"
 ]
 
-def main(pr_registry_path):
-    # 1. Load the PR registry.json
+def main():
+    pr_registry_path = "registry.json"
+
+    # 1. Load registry.json
     with open(pr_registry_path, "r", encoding="utf-8") as f:
         registry_data = json.load(f)
 
     packages = registry_data.get("packages", [])
-    new_package = packages[-1]  # The newly appended package
+    new_package = packages[-1]  # The newly added package
     repo_url = new_package["repository"]
 
     # 2. Fetch sop.toml again
     raw_url = repo_url.replace("github.com", "raw.githubusercontent.com").rstrip("/") + "/main/sop.toml"
     response = requests.get(raw_url)
-    response.raise_for_status()  # Throws an error if not 200
+    response.raise_for_status()
     sop_data = toml.loads(response.text)
     package_info = sop_data.get("package", {})
 
-    # 3. Overwrite fields in new_package with data from sop.toml
+    # 3. Overwrite fields in new_package with validated data from sop.toml
     for field in FIELDS_TO_COPY:
         if field in package_info:
             new_package[field] = package_info[field]
 
-    # Reassign updated package
+    # 4. Update the last entry in the packages list
     packages[-1] = new_package
     registry_data["packages"] = packages
 
-    # 4. Write updated registry.json
+    # 5. Save the updated registry.json
     with open(pr_registry_path, "w", encoding="utf-8") as f:
         json.dump(registry_data, f, indent=2)
 
-    # 5. Build dynamic commit message using the new package's "name"
+    # 6. Dynamic commit message using the package name
     package_name = package_info.get("name", "unknown-package")
     commit_message = f"feat: add validated package '{package_name}'"
 
-    # 6. Ensure we push using GitHub PAT
-    pat = os.getenv("GH_PAT")  # Fetch token from environment
+    # 7. Get GitHub PAT for authentication
+    pat = os.getenv("GH_PAT")
     if not pat:
-        print("Error: GH_PAT environment variable not set.", file=sys.stderr)
+        print("❌ Error: GH_PAT environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    # 7. Configure Git with the PAT
+    # 8. Configure Git with the PAT
     subprocess.run(["git", "config", "user.name", "soplang-bot"], check=True)
     subprocess.run(["git", "config", "user.email", "actions@soplang.org"], check=True)
     subprocess.run(["git", "remote", "set-url", "origin", f"https://x-access-token:{pat}@github.com/soplang/registry.git"], check=True)
 
-    # 8. Add, commit, and push changes
+    # 9. Add, commit, and push changes to the PR branch
     subprocess.run(["git", "add", pr_registry_path], check=True)
     subprocess.run(["git", "commit", "-m", commit_message], check=True)
 
-    # Detect PR branch name dynamically
+    # Detect PR branch dynamically
     branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode()
-
-    # Push to the PR branch
     subprocess.run(["git", "push", "origin", branch_name], check=True)
 
-    print(f"update_registry.py: registry.json updated and committed with message: '{commit_message}'")
+    print(f"✅ Successfully updated {pr_registry_path} and committed: '{commit_message}'")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python update_registry.py <pr_registry.json>", file=sys.stderr)
-        sys.exit(1)
-    main(sys.argv[1])
+    main()

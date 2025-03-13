@@ -48,12 +48,14 @@ jobs:
           python scripts/validate_sop_toml.py registry.json
           # Move back to preserve naming
           mv registry.json pr_registry.json
-          
+
       - name: Configure Git to use PAT
         run: |
           git config --global user.name "soplang-bot"
           git config --global user.email "actions@soplang.org"
           git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/soplang/registry.git
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
 
       - name: Update registry & commit
         run: |
