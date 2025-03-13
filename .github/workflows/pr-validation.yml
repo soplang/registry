@@ -1,0 +1,54 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v3
+        with:
+          # We want to compare with the base branch too, so let's fetch all history
+          fetch-depth: 0
+
+      - name: Fetch base branch registry
+        run: |
+          # Save the base (main) registry as 'base_registry.json'
+          git checkout origin/main -- registry.json
+          mv registry.json base_registry.json
+
+          # Switch back to the PR branch's registry as 'pr_registry.json'
+          git checkout HEAD -- registry.json
+          mv registry.json pr_registry.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests toml
+
+      - name: Verify only one new package appended
+        run: |
+          python scripts/verify_append.py base_registry.json pr_registry.json
+
+      - name: Validate sop.toml
+        run: |
+          # Move pr_registry.json to registry.json so scripts read "registry.json"
+          mv pr_registry.json registry.json
+          python scripts/validate_sop_toml.py registry.json
+          # Move back to preserve naming
+          mv registry.json pr_registry.json
+
+      - name: Update registry & commit
+        run: |
+          # This script updates the final metadata in pr_registry.json
+          # AND commits with a dynamic message referencing the package name
+          python scripts/update_registry.py pr_registry.json
