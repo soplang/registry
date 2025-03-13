@@ -15,6 +15,7 @@ jobs:
         with:
           # We want to compare with the base branch too, so let's fetch all history
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Fetch base branch registry
         run: |
