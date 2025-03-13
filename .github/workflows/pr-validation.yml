@@ -74,7 +74,7 @@ jobs:
         if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           git config --global user.name "sharafdin"
-          git config --global user.email "actions@soplang.org"
+          git config --global user.email "isasharafdin@gmail.com"
           git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/soplang/registry.git
         env:
           GH_PAT: ${{ secrets.GH_PAT }}

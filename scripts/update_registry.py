@@ -79,7 +79,7 @@ def main():
     # 8. Configure Git with the PAT - use the same username as in the workflow
     subprocess.run(["git", "config", "user.name", "sharafdin"], check=True)
     subprocess.run(["git", "config", "user.email",
-                   "actions@soplang.org"], check=True)
+                   "isasharafdin@gmail.com"], check=True)
 
     # Use the repository URL from the GitHub environment if available
     repo_url = os.getenv("GITHUB_REPOSITORY", "soplang/registry")
