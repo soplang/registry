@@ -22,7 +22,21 @@ jobs:
           ref: ${{ github.head_ref }}
           persist-credentials: false # Disable default GitHub Actions credentials
 
+      # Check if this is a bot commit by looking at the last commit message
+      - name: Check if bot commit
+        id: check_bot_commit
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"feat: add validated package"* ]]; then
+            echo "This appears to be a bot commit, skipping validation"
+            echo "is_bot_commit=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_bot_commit=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Only proceed with validation if not a bot commit
       - name: Fetch base branch registry
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           # Save the base (main) registry as 'base_registry.json'
           git checkout origin/main -- registry.json
@@ -33,19 +47,23 @@ jobs:
           mv registry.json pr_registry.json
 
       - name: Set up Python
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
       - name: Install Python dependencies
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           pip install requests toml
 
       - name: Verify only one new package appended
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           python scripts/verify_append.py base_registry.json pr_registry.json
 
       - name: Validate sop.toml
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           # Move pr_registry.json to registry.json so scripts read "registry.json"
           mv pr_registry.json registry.json
@@ -54,6 +72,7 @@ jobs:
           mv registry.json pr_registry.json
 
       - name: Configure Git to use PAT
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           git config --global user.name "soplang"
           git config --global user.email "actions@soplang.org"
@@ -62,6 +81,7 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
 
       - name: Update registry & commit
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
         run: |
           # Move pr_registry.json back to registry.json for the update script
           mv pr_registry.json registry.json

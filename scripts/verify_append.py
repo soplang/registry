@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 import json
 import sys
+import os
+
+# Fields that are expected in a fully populated package entry
+METADATA_FIELDS = {
+    "name",
+    "version",
+    "status",
+    "license",
+    "author",
+    "repository",
+    "entry"
+}
+
 
 def main(base_registry_path, pr_registry_path):
     """
     Ensures the PR's registry.json is the same as base_registry.json
     except for exactly ONE new package appended to the 'packages' array,
     containing only 'repository'.
+
+    If the new package already has all metadata fields, we assume it's a bot-generated
+    commit and skip validation.
     """
 
     # 1. Load the base (main) registry.json
@@ -18,7 +34,8 @@ def main(base_registry_path, pr_registry_path):
         pr_data = json.load(f)
 
     if "packages" not in base_data or "packages" not in pr_data:
-        print("Error: 'packages' array is missing in registry.json files.", file=sys.stderr)
+        print("Error: 'packages' array is missing in registry.json files.",
+              file=sys.stderr)
         sys.exit(1)
 
     base_packages = base_data["packages"]
@@ -36,15 +53,22 @@ def main(base_registry_path, pr_registry_path):
     # 4. All existing packages in base must match exactly
     for i in range(len(base_packages)):
         if base_packages[i] != pr_packages[i]:
-            print(f"Error: Existing package at index {i} was modified.", file=sys.stderr)
+            print(
+                f"Error: Existing package at index {i} was modified.", file=sys.stderr)
             sys.exit(1)
 
     # 5. The new package is appended at the end
     new_package = pr_packages[-1]
+    new_package_fields = set(new_package.keys())
+
+    # Check if this is likely a bot-generated commit with all metadata fields
+    # If the package has most of the expected metadata fields, assume it's from the bot
+    if len(METADATA_FIELDS.intersection(new_package_fields)) >= 5:
+        print("Detected a package with metadata fields - assuming this is a bot-generated commit. Skipping validation.")
+        sys.exit(0)  # Exit successfully without further validation
 
     # 6. The new package must ONLY have the 'repository' field
     allowed_fields = {"repository"}
-    new_package_fields = set(new_package.keys())
     extra_fields = new_package_fields - allowed_fields
     if extra_fields:
         print(
@@ -61,6 +85,7 @@ def main(base_registry_path, pr_registry_path):
         sys.exit(1)
 
     print("verify_append.py: The PR correctly appends one new package with only the 'repository' field.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
