@@ -84,6 +84,21 @@ def compare_metadata(registry_package: Dict[str, Any], sop_data: Dict[str, Any])
     return True
 
 
+def run_git_command(command, error_message=None):
+    """Run a git command and handle errors gracefully."""
+    try:
+        result = subprocess.run(command, check=True,
+                                capture_output=True, text=True)
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        msg = error_message or f"Git command failed: {' '.join(command)}"
+        print(f"❌ {msg}")
+        print(f"Error details: {e}")
+        print(f"Command output: {e.stdout}")
+        print(f"Command error: {e.stderr}")
+        return None
+
+
 def main():
     """Main function to check all packages in registry.json."""
     registry_path = "registry.json"
@@ -155,26 +170,41 @@ def main():
             sys.exit(1)
 
         # Configure Git
-        subprocess.run(["git", "config", "user.name", "sharafdin"], check=True)
-        subprocess.run(["git", "config", "user.email",
-                       "isasharafdin@gmail.com"], check=True)
+        run_git_command(["git", "config", "user.name", "sharafdin"],
+                        "Failed to configure Git username")
+        run_git_command(["git", "config", "user.email", "isasharafdin@gmail.com"],
+                        "Failed to configure Git email")
 
         # Use the repository URL from the GitHub environment if available
         repo_url = os.getenv("GITHUB_REPOSITORY", "soplang/registry")
-        subprocess.run(["git", "remote", "set-url", "origin",
-                       f"https://x-access-token:{pat}@github.com/{repo_url}.git"], check=True)
+        remote_url = f"https://x-access-token:{pat}@github.com/{repo_url}.git"
+        run_git_command(["git", "remote", "set-url", "origin", remote_url],
+                        "Failed to set Git remote URL")
 
         # Add, commit, and push changes
-        subprocess.run(["git", "add", registry_path], check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "chore: update 'valid' status for packages"], check=True)
+        if not run_git_command(["git", "add", registry_path],
+                               "Failed to stage changes"):
+            sys.exit(1)
 
-        # Get current branch and push
-        branch_name = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode()
-        subprocess.run(["git", "push", "origin", branch_name], check=True)
+        if not run_git_command(["git", "commit", "-m", "chore: update 'valid' status for packages"],
+                               "Failed to commit changes"):
+            sys.exit(1)
 
-        print("✅ Successfully updated and committed package validity status")
+        # Get current branch
+        branch_name = run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                                      "Failed to determine current branch")
+        if not branch_name:
+            branch_name = "main"  # Default to main if we can't determine the branch
+
+        # Try to push changes
+        print(f"Pushing changes to {branch_name} branch...")
+        if run_git_command(["git", "push", "origin", branch_name],
+                           f"Failed to push changes to {branch_name}"):
+            print("✅ Successfully updated and committed package validity status")
+        else:
+            print(
+                "⚠️ Changes were made locally but could not be pushed to the repository")
+            sys.exit(1)
     else:
         print("✅ No changes to package validity status")
 
