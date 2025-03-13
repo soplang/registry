@@ -46,12 +46,29 @@ When you submit a PR, our GitHub Actions workflow will:
 4. Update the registry with complete metadata
 5. Commit the changes back to your PR branch
 
+## Package Validity Monitoring
+
+All packages in the registry are checked daily to ensure they remain valid:
+
+- Each package's repository is checked to ensure:
+  - The `sop.toml` file is still accessible
+  - The entry file specified in `sop.toml` exists
+  - The metadata in `sop.toml` matches what's in the registry
+
+- Packages have a `valid` field that indicates their current status:
+  - `true`: The package is valid and up-to-date
+  - `false`: The package has issues (missing files or metadata mismatch)
+
+- If a package becomes invalid, it will be automatically marked as such
+- If a previously invalid package is fixed, it will be automatically marked as valid again
+
 ## Important Notes
 
 - Only modify the registry.json file in your PR
 - Only add one new package at a time
 - Only include the repository URL in your initial submission
 - The rest of the metadata will be automatically populated from your sop.toml file
+- Keep your package's sop.toml file up-to-date to maintain validity
 
 ## License
 
