@@ -4,6 +4,7 @@ import sys
 import requests
 import toml
 import subprocess
+import os
 
 FIELDS_TO_COPY = [
     "name",
@@ -19,7 +20,6 @@ FIELDS_TO_COPY = [
     "categories"
 ]
 
-
 def main(pr_registry_path):
     # 1. Load the PR registry.json
     with open(pr_registry_path, "r", encoding="utf-8") as f:
@@ -30,10 +30,9 @@ def main(pr_registry_path):
     repo_url = new_package["repository"]
 
     # 2. Fetch sop.toml again
-    raw_url = repo_url.replace(
-        "github.com", "raw.githubusercontent.com").rstrip("/") + "/main/sop.toml"
+    raw_url = repo_url.replace("github.com", "raw.githubusercontent.com").rstrip("/") + "/main/sop.toml"
     response = requests.get(raw_url)
-    response.raise_for_status()  # throws an error if not 200
+    response.raise_for_status()  # Throws an error if not 200
     sop_data = toml.loads(response.text)
     package_info = sop_data.get("package", {})
 
@@ -54,21 +53,28 @@ def main(pr_registry_path):
     package_name = package_info.get("name", "unknown-package")
     commit_message = f"feat: add validated package '{package_name}'"
 
+    # 6. Ensure we push using GitHub PAT
+    pat = os.getenv("GH_PAT")  # Fetch token from environment
+    if not pat:
+        print("Error: GH_PAT environment variable not set.", file=sys.stderr)
+        sys.exit(1)
 
-    # 6. Commit & push changes
+    # 7. Configure Git with the PAT
     subprocess.run(["git", "config", "user.name", "soplang-bot"], check=True)
     subprocess.run(["git", "config", "user.email", "actions@soplang.org"], check=True)
+    subprocess.run(["git", "remote", "set-url", "origin", f"https://x-access-token:{pat}@github.com/soplang/registry.git"], check=True)
+
+    # 8. Add, commit, and push changes
     subprocess.run(["git", "add", pr_registry_path], check=True)
     subprocess.run(["git", "commit", "-m", commit_message], check=True)
 
-    # FIX: Get the branch name dynamically
+    # Detect PR branch name dynamically
     branch_name = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode()
 
-    # Ensure we push to the PR branch, not the detached HEAD
+    # Push to the PR branch
     subprocess.run(["git", "push", "origin", branch_name], check=True)
 
     print(f"update_registry.py: registry.json updated and committed with message: '{commit_message}'")
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
