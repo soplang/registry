@@ -1,0 +1,24 @@
+{
+  "packages": [
+    {
+      "repository": "https://github.com/soplang/helloWorld",
+      "name": "hello-world",
+      "version": "1.0.0",
+      "status": "stable",
+      "description": "A simple Soplang package that prints 'Hello, Soplang!'",
+      "license": "MIT",
+      "author": "soplang",
+      "homepage": "https://www.soplang.org",
+      "entry": "src/main.so",
+      "keywords": [
+        "soplang",
+        "hello",
+        "example"
+      ],
+      "categories": [
+        "utilities",
+        "examples"
+      ]
+    }
+  ]
+}
