@@ -10,7 +10,7 @@ This repository maintains a central registry of Soplang packages. Each package e
 
 1. **Fork this repository**
 2. **Add your package to the registry**:
-   - Edit `registry.json`
+   - Edit `registry.json` (this is the ONLY file you should modify)
    - Add a new entry at the end of the `packages` array with only the `repository` field:
      ```json
      {
@@ -19,6 +19,7 @@ This repository maintains a central registry of Soplang packages. Each package e
      ```
 3. **Open a Pull Request**
    - Our automated validation will:
+     - Verify you've only modified the registry.json file
      - Verify you've only added one new package
      - Fetch and validate your `sop.toml` file
      - Update the registry with complete metadata from your package
@@ -39,10 +40,18 @@ Your package repository must contain:
 ## Validation Process
 
 When you submit a PR, our GitHub Actions workflow will:
-1. Verify that you've only appended one new package
-2. Fetch and validate your `sop.toml` file
-3. Update the registry with complete metadata
-4. Commit the changes back to your PR branch
+1. Verify that you've only modified the registry.json file
+2. Verify that you've only appended one new package
+3. Fetch and validate your `sop.toml` file
+4. Update the registry with complete metadata
+5. Commit the changes back to your PR branch
+
+## Important Notes
+
+- Only modify the registry.json file in your PR
+- Only add one new package at a time
+- Only include the repository URL in your initial submission
+- The rest of the metadata will be automatically populated from your sop.toml file
 
 ## License
 

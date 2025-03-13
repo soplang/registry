@@ -33,6 +33,22 @@ jobs:
             echo "is_bot_commit=false" >> $GITHUB_OUTPUT
           fi
 
+      # Check that only registry.json was modified
+      - name: Verify only registry.json was modified
+        if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
+        run: |
+          # Get list of modified files in this PR
+          MODIFIED_FILES=$(git diff --name-only origin/main HEAD)
+          # Count number of modified files
+          NUM_MODIFIED=$(echo "$MODIFIED_FILES" | wc -l)
+          # Check if only registry.json was modified
+          if [[ "$NUM_MODIFIED" -ne 1 || "$MODIFIED_FILES" != "registry.json" ]]; then
+            echo "Error: Only registry.json should be modified in this PR."
+            echo "Modified files: $MODIFIED_FILES"
+            exit 1
+          fi
+          echo "✅ Verified that only registry.json was modified."
+
       # Only proceed with validation if not a bot commit
       - name: Fetch base branch registry
         if: steps.check_bot_commit.outputs.is_bot_commit == 'false'
