@@ -9,8 +9,7 @@ on:
 
 jobs:
   validate-package:
-    # Skip if the commit was made by the bot
-    if: ${{ github.actor != 'sharafdin' }}
+    # Run for all PRs that modify registry.json
     runs-on: ubuntu-latest
 
     steps:
