@@ -76,8 +76,8 @@ def main():
         print("❌ Error: GH_PAT environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    # 8. Configure Git with the PAT - use the same bot name as in the workflow
-    subprocess.run(["git", "config", "user.name", "soplang-bot"], check=True)
+    # 8. Configure Git with the PAT - use the same username as in the workflow
+    subprocess.run(["git", "config", "user.name", "soplang"], check=True)
     subprocess.run(["git", "config", "user.email",
                    "actions@soplang.org"], check=True)
 

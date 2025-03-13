@@ -10,7 +10,7 @@ on:
 jobs:
   validate-package:
     # Skip if the commit was made by the bot
-    if: ${{ github.actor != 'soplang-bot' }}
+    if: ${{ github.actor != 'soplang' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +55,7 @@ jobs:
 
       - name: Configure Git to use PAT
         run: |
-          git config --global user.name "soplang-bot"
+          git config --global user.name "soplang"
           git config --global user.email "actions@soplang.org"
           git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/soplang/registry.git
         env:
