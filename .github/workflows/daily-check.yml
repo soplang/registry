@@ -3,6 +3,8 @@ name: "Daily Package Sync Checker"
 on:
   schedule:
     - cron: "0 0 * * *" # Run daily at midnight UTC
+  issues:
+    types: [labeled]
   workflow_dispatch: # Allow manual triggering
 
 permissions:
@@ -11,6 +13,8 @@ permissions:
 jobs:
   check-packages:
     runs-on: ubuntu-latest
+    # Skip if this is triggered by a label that's not 'package-broken' or 'package-missing'
+    if: ${{ github.event_name != 'issues' || contains(github.event.label.name, 'package-broken') || contains(github.event.label.name, 'package-missing') }}
 
     steps:
       - name: Check out repository
@@ -27,6 +31,12 @@ jobs:
           echo "Current branch: $(git branch --show-current)"
           echo "GitHub Actor: ${{ github.actor }}"
           echo "GitHub Repository: ${{ github.repository }}"
+          echo "Trigger event: ${{ github.event_name }}"
+          if [[ "${{ github.event_name }}" == "issues" ]]; then
+            echo "Issue number: ${{ github.event.issue.number }}"
+            echo "Issue title: ${{ github.event.issue.title }}"
+            echo "Label: ${{ github.event.label.name }}"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -42,3 +52,16 @@ jobs:
           python scripts/daily_check.py
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+
+      - name: Comment on issue if triggered by label
+        if: ${{ github.event_name == 'issues' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.payload.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Package validity check has been run based on this issue label. The registry has been updated if any changes were detected.'
+            })
