@@ -4,9 +4,13 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - "registry.json"
 
 jobs:
   validate-package:
+    # Skip if the commit was made by the bot
+    if: ${{ github.actor != 'soplang-bot' }}
     runs-on: ubuntu-latest
 
     steps:
