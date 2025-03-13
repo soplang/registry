@@ -1,4 +1,8 @@
 {
-    "packages": []
+    "packages": [
+        {
+            "repository": "https://github.com/soplang/helloWorld"
+        }
+    ]
   }
   
