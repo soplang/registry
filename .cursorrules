@@ -1,0 +1,92 @@
+# PROJECT GOAL:
+#   We want to create a "Soplang Registry" project that:
+#   1) Stores an index file called "registry.json" with an array of "packages".
+#   2) Provides a CI workflow (GitHub Actions) to validate new package entries.
+#   3) Includes Python scripts:
+#       - verify_append.py  (Ensures only 1 new package appended at the end)
+#       - validate_sop_toml.py (Fetches a package's sop.toml, validates required fields)
+#       - update_registry.py (Updates registry.json with final metadata and commits)
+#
+# DESIRED REPO STRUCTURE:
+#   soplangRegistry/
+#   ├── .github/
+#   │   └── workflows/
+#   │       └── pr-validation.yml
+#   ├── scripts/
+#   │   ├── verify_append.py
+#   │   ├── validate_sop_toml.py
+#   │   └── update_registry.py
+#   ├── registry.json
+#   ├── README.md (optional, but recommended)
+#   └── .gitignore (optional)
+#
+# FILE CONTENTS & LOGIC:
+# 
+# 1) registry.json
+#   - The main JSON file that keeps an array of packages. 
+#   - Initialize it with: {"packages": []}
+#
+# 2) scripts/verify_append.py
+#   - Check that the newly added package is appended at the end of registry.json
+#   - That package must only have "repository" as its field.
+#   - If it has extra fields or no "repository" value, exit with error.
+#
+# 3) scripts/validate_sop_toml.py
+#   - Read the last package in registry.json to get "repository".
+#   - Construct a raw GitHub URL to fetch "sop.toml".
+#   - Parse "sop.toml" using python "toml" library.
+#   - Validate required fields: name, version, status, license, author, repository, entry.
+#   - Verify that "entry" file is also present in the same repo.
+#   - Exit with error if missing anything.
+#
+# 4) scripts/update_registry.py
+#   - Loads registry.json, fetches the last package's "sop.toml" again.
+#   - Copies fields (name, version, status, description, license, author, repository, homepage, entry, keywords, categories) into registry.json's last package object.
+#   - Commits the changes with a dynamic message: "feat: add validated package '<NAME>'"
+#   - Pushes changes back to the PR branch (requires GH_PAT in environment).
+#
+# 5) .github/workflows/pr-validation.yml
+#   - A GitHub Actions workflow that:
+#       1) Checks out the PR branch with "fetch-depth: 0"
+#       2) Ensures registry.json is present (creates or fetches it if missing)
+#       3) Installs python dependencies (requests, toml)
+#       4) Runs verify_append.py and validate_sop_toml.py on "registry.json"
+#       5) Runs update_registry.py to finalize "registry.json" and commit changes
+#         (Requires GH_PAT as a secret so it can push to the PR branch)
+# 
+# 6) README.md
+#   - Optional, but recommended to describe the project.
+#   - Summarize how developers add new packages (fork, add { "repository": "..." }, open PR).
+#
+# 7) .gitignore (optional)
+#   - Could ignore virtual environments, coverage reports, etc.
+#
+# ---------------------------
+# PROMPT REQUEST FOR CURSOR AI
+# ---------------------------
+# Instruct Cursor AI to:
+#   1. Create the EXACT directory structure above.
+#   2. Generate the specified files with working code for each.
+#   3. Provide the final file contents inline or create them directly in the repo.
+#
+# EXAMPLE:
+#   - Add "registry.json" with {"packages": []}.
+#   - For scripts, use the logic described, exit(1) if validation fails.
+#   - In .github/workflows/pr-validation.yml, define steps as described.
+#
+# Make sure the final code is functional and consistent. 
+# No placeholders: each script must import "json", "sys", "requests", "toml", etc. 
+# GH_PAT is used for set-url to "origin".
+#
+# (Optionally, instruct Cursor to show you the final file tree.)
+#
+# Include minimal docstrings in each Python script explaining the function. 
+# For example:
+# """verify_append.py checks the last package in registry.json for only {repository}"""
+#
+# You can finalize it with:
+#   - "git add ."
+#   - "git commit -m 'Initial commit for Soplang Registry project'"
+#   - "git push origin main"
+#
+# DONE.

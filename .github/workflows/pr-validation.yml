@@ -16,7 +16,7 @@ jobs:
           # We want to compare with the base branch too, so let's fetch all history
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-          persist-credentials: false  # Disable default GitHub Actions credentials
+          persist-credentials: false # Disable default GitHub Actions credentials
 
       - name: Fetch base branch registry
         run: |
@@ -59,6 +59,10 @@ jobs:
 
       - name: Update registry & commit
         run: |
-          # This script updates the final metadata in pr_registry.json
+          # Move pr_registry.json back to registry.json for the update script
+          mv pr_registry.json registry.json
+          # This script updates the final metadata in registry.json
           # AND commits with a dynamic message referencing the package name
-          python scripts/update_registry.py pr_registry.json
+          python scripts/update_registry.py
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
